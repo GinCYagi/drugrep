@@ -1,0 +1,72 @@
+import { Substance } from "@/types/domain";
+
+export const substances: Substance[] = [
+  {
+    id: "methylphenidate",
+    displayName: "メチルフェニデート",
+    genericName: "Methylphenidate",
+    category: "prescription",
+    defaultUnit: "mg",
+    routes: ["oral", "rectal", "other"],
+    halfLifeHours: { min: 3, max: 4 },
+    tags: [
+      { tag: "stimulant", weight: 3 },
+      { tag: "heart_rate_up", weight: 2 },
+      { tag: "blood_pressure_up", weight: 2 },
+      { tag: "arrhythmia_risk", weight: 1 },
+    ],
+  },
+  {
+    id: "moclobemide",
+    displayName: "モクロベミド",
+    genericName: "Moclobemide",
+    category: "prescription",
+    defaultUnit: "mg",
+    routes: ["oral"],
+    halfLifeHours: { min: 2, max: 4 },
+    tags: [{ tag: "serotonergic", weight: 2 }],
+  },
+  {
+    id: "pregabalin",
+    displayName: "プレガバリン",
+    genericName: "Pregabalin",
+    category: "prescription",
+    defaultUnit: "mg",
+    routes: ["oral"],
+    halfLifeHours: { min: 5, max: 7 },
+    tags: [
+      { tag: "depressant", weight: 2 },
+      { tag: "sedative_hypnotic", weight: 2 },
+    ],
+  },
+  {
+    id: "tramadol_combo",
+    displayName: "トラマドール/アセトアミノフェン",
+    genericName: "Tramadol combo",
+    category: "prescription",
+    defaultUnit: "tablet",
+    routes: ["oral"],
+    halfLifeHours: { min: 5, max: 7 },
+    tags: [
+      { tag: "opioid_like", weight: 2 },
+      { tag: "respiratory_depression", weight: 1 },
+      { tag: "serotonergic", weight: 1 },
+      { tag: "seizure_threshold_lowering", weight: 2 },
+      { tag: "depressant", weight: 1 },
+    ],
+  },
+  {
+    id: "eszopiclone",
+    displayName: "エスゾピクロン",
+    genericName: "Eszopiclone",
+    category: "prescription",
+    defaultUnit: "mg",
+    routes: ["oral"],
+    halfLifeHours: { min: 5, max: 6 },
+    tags: [
+      { tag: "depressant", weight: 2 },
+      { tag: "sedative_hypnotic", weight: 3 },
+      { tag: "respiratory_depression", weight: 1 },
+    ],
+  },
+];
