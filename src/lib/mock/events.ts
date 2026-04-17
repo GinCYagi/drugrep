@@ -1,4 +1,4 @@
-import { DoseEvent } from "@/types/domain";
+import { DoseEvent } from "@/src/types/domain";
 
 export const mockEvents: DoseEvent[] = [
   {

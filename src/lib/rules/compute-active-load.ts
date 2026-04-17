@@ -1,4 +1,4 @@
-import { DerivedLoad, DoseEvent, RiskTagWeight, Substance } from "@/types/domain";
+import { DerivedLoad, DoseEvent, RiskTagWeight, Substance } from "@/src/types/domain";
 
 function getSubstanceMap(substances: Substance[]) {
   return new Map(substances.map((s) => [s.id, s]));

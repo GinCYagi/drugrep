@@ -1,5 +1,5 @@
-import { DoseEvent, Substance } from "@/types/domain";
-import { routeLabel } from "@/lib/utils/labels";
+import { DoseEvent, Substance } from "@/src/types/domain";
+import { routeLabel } from "@/src/lib/utils/labels";
 
 export function DoseEventCard({
   event,

@@ -1,4 +1,4 @@
-import { Alert, AlertLevel, DoseEvent, Substance } from "@/types/domain";
+import { Alert, AlertLevel, DoseEvent, Substance } from "@/src/types/domain";
 import { computeActiveLoad } from "./compute-active-load";
 
 function maxLevel(a: AlertLevel, b: AlertLevel): AlertLevel {

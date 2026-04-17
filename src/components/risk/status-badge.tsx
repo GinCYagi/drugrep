@@ -1,5 +1,5 @@
-import { AlertLevel } from "@/types/domain";
-import { alertLevelLabel } from "@/lib/utils/labels";
+import { AlertLevel } from "@/src/types/domain";
+import { alertLevelLabel } from "@/src/lib/utils/labels";
 
 export function StatusBadge({ level }: { level: AlertLevel }) {
   const className =
