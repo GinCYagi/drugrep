@@ -1,10 +1,6 @@
-export type Route =
-  | "oral"
-  | "sublingual"
-  | "rectal"
-  | "sniff"
-  | "inhaled"
-  | "other";
+// 現段階のUI対応語彙のみ。sublingual / inhaled / その他の投与経路は
+// 必要になった段階で拡張する前提で、一旦 oral / nasal / rectal に絞っている。
+export type Route = "oral" | "nasal" | "rectal";
 
 export type AlertLevel = "stable" | "caution" | "high" | "critical";
 
@@ -41,6 +37,15 @@ export type Substance = {
   halfLifeHours?: {
     min?: number;
     max?: number;
+  };
+  // 表記ゆれ吸収用。商品名・略号・カタカナ表記を想定（スペルミス吸収は対象外）。
+  aliases?: string[];
+  // アプリ内部の相対評価閾値（`defaultUnit` 基準）。添付文書の上限値ではない。
+  // calculateRisk の用量補正係数を決めるためのスケール。
+  doseBands?: {
+    commonMax?: number;
+    highMax?: number;
+    veryHighMax?: number;
   };
 };
 

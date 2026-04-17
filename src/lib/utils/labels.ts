@@ -1,4 +1,4 @@
-import { AlertLevel, RiskTag, Route } from "@/types/domain";
+import { AlertLevel, RiskTag, Route } from "@/src/types/domain";
 
 export const alertLevelLabel: Record<AlertLevel, string> = {
   stable: "安定",
@@ -9,11 +9,8 @@ export const alertLevelLabel: Record<AlertLevel, string> = {
 
 export const routeLabel: Record<Route, string> = {
   oral: "経口",
-  sublingual: "舌下",
+  nasal: "経鼻",
   rectal: "直腸",
-  sniff: "経鼻",
-  inhaled: "吸入",
-  other: "その他",
 };
 
 export const riskTagLabel: Record<RiskTag, string> = {

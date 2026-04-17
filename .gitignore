@@ -1,45 +1,47 @@
-# Dependencies
-node_modules/
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Build outputs
-dist/
-build/
-coverage/
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
 
-# Logs
-*.log
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
+.pnpm-debug.log*
 
-# Environment / secrets
-.env
-.env.*
-!.env.example
-*.pem
-*.key
-*.p12
-*.pfx
-*.cer
-*.crt
-*.csr
-*.der
-secrets.*
-credentials.*
-auth.*
-token.*
-tokens.*
-session.*
-sessions.*
+# env files (can opt-in for committing if needed)
+.env*
 
-# OS / editor junk
-.DS_Store
-Thumbs.db
-Desktop.ini
-.vscode/
-.idea/
+# vercel
+.vercel
 
-# Temp files
-*.tmp
-*.temp
+# claude code local state
+.claude/
+
+# retired code kept locally for reference
+_legacy_backup/
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts

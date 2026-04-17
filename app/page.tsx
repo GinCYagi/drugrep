@@ -1,21 +1,11 @@
 'use client'
 import { useState } from 'react'
+import { calculateRisk } from '@/src/lib/rules/calculate-risk'
 
 export default function Home() {
   const [drug, setDrug] = useState('')
   const [dose, setDose] = useState('')
   const [route, setRoute] = useState('oral')
-
-  const calculateRisk = () => {
-    let score = 0
-
-    // 仮ロジック（後で本質を詰める）
-    if (drug.toLowerCase().includes('dxm')) score += 30
-    if (route === 'rectum') score += 20
-    if (Number(dose) > 100) score += 20
-
-    return score
-  }
 
   return (
     <main style={{ padding: 20 }}>
@@ -40,12 +30,12 @@ export default function Home() {
       <div>
         <select value={route} onChange={(e) => setRoute(e.target.value)}>
           <option value="oral">oral</option>
-          <option value="rectum">rectum</option>
-          <option value="sniff">sniff</option>
+          <option value="nasal">nasal</option>
+          <option value="rectal">rectal</option>
         </select>
       </div>
 
-      <h2>Risk Score: {calculateRisk()}</h2>
+      <h2>Risk Score: {calculateRisk(drug, dose, route)}</h2>
     </main>
   )
 }
