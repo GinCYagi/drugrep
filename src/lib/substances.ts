@@ -11,7 +11,7 @@ export const substances: Substance[] = [
     genericName: "Methylphenidate",
     category: "prescription",
     defaultUnit: "mg",
-    routes: ["oral", "rectal"],
+    routes: ["oral", "rectal", "nasal"],
     halfLifeHours: { min: 3, max: 4 },
     aliases: ["リタリン", "ritalin", "コンサータ", "concerta", "mph"],
     doseBands: { commonMax: 60, highMax: 80, veryHighMax: 120 },
