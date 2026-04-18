@@ -92,3 +92,58 @@ export type DailySummary = {
   eventCount: number;
   topReasons: string[];
 };
+
+// ---- 文献参照（将来 about ページや InteractionRule.sources で使用） ----
+export type SourceRef = {
+  id: string;
+  title: string;
+  url?: string;
+  note?: string;
+};
+
+// ---- 相互作用ルール ----
+// interactionRules は「複数要素の組合せ」を評価するレイヤ。
+// 単剤の solo 評価は Substance.tags.weight / doseBands / routes 側で行う（責務分離）。
+// 同一 substance.id を複数エントリ入力した場合、評価側で dedupe してから
+// substance match / tag minCount の判定に用いる（量的過量は doseBands 側で扱う）。
+export type InteractionMatch =
+  | { kind: "substance"; id: string }
+  | { kind: "tag"; tag: RiskTag; minCount?: number };
+
+// MVP は add のみ。将来 multiply を戻せるよう union 形状は保持。
+export type InteractionEffect = { kind: "add"; value: number };
+
+// InteractionSeverity は AlertLevel（"stable" を含む）と別軸。
+// ルール自体が stable を取り得ないため、意図的に分離。
+export type InteractionSeverity = "caution" | "high" | "critical";
+
+export type InteractionRule = {
+  id: string;
+  label: string;
+  description?: string;
+  severity: InteractionSeverity;
+  requires: InteractionMatch[]; // AND セマンティクス
+  effect: InteractionEffect;
+  sources?: SourceRef[];
+};
+
+// ---- 複数薬剤評価の入出力 ----
+export type DoseInput = {
+  drug: string;
+  dose: string;
+  route: string;
+};
+
+export type TriggeredRule = {
+  ruleId: string;
+  severity: InteractionSeverity;
+  contribution: number;
+};
+
+export type CombinedRiskResult = {
+  finalScore: number;
+  soloTotal: number;
+  interactionAdd: number;
+  perDose: { drug: string; soloScore: number }[];
+  triggered: TriggeredRule[];
+};
