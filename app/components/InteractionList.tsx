@@ -1,4 +1,5 @@
 import type { InteractionSeverity } from '@/src/types/domain'
+import { ja } from '@/src/lib/i18n/ja'
 
 // page.tsx が triggered(TriggeredRule) を label 付きに整形して渡す前提の表示用型。
 type InteractionItem = {
@@ -17,7 +18,7 @@ export default function InteractionList({ interactions }: Props) {
 
   return (
     <section className="space-y-2">
-      <h2 className="text-sm font-semibold text-gray-700">相互作用</h2>
+      <h2 className="text-sm font-semibold text-gray-700">{ja.interactions.heading}</h2>
       <ul className="space-y-1">
         {interactions.map((it) => (
           <li

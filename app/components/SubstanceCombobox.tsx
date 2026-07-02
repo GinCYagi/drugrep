@@ -1,6 +1,7 @@
 'use client'
 import { useState } from 'react'
 import type { Substance } from '@/src/types/domain'
+import { ja } from '@/src/lib/i18n/ja'
 
 type Props = {
   substances: Substance[]
@@ -25,8 +26,8 @@ export default function SubstanceCombobox({ substances, onAdd }: Props) {
         type="text"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="物質を検索して追加"
-        className="h-11 w-full rounded border px-3 text-base"
+        placeholder={ja.entry.addPlaceholder}
+        className="h-11 w-full rounded border px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
       />
 
       {filtered.length > 0 && (
@@ -39,7 +40,7 @@ export default function SubstanceCombobox({ substances, onAdd }: Props) {
                   onAdd(s.id)
                   setQuery('')
                 }}
-                className="flex min-h-[44px] w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-gray-50"
+                className="flex min-h-11 w-full flex-col items-start px-3 py-2 text-left text-sm hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
               >
                 <span className="font-medium">{s.displayName}</span>
                 {s.aliases && s.aliases.length > 0 && (

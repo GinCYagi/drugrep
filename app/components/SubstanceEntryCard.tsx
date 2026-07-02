@@ -1,5 +1,6 @@
 import type { Route, Substance } from '@/src/types/domain'
 import type { FieldError } from '@/src/lib/validation'
+import { ja } from '@/src/lib/i18n/ja'
 
 type Props = {
   substance: Substance
@@ -48,15 +49,16 @@ export default function SubstanceEntryCard({
         <button
           type="button"
           onClick={onRemove}
-          className="min-h-[44px] rounded border px-3 text-sm text-red-700"
+          className="min-h-11 rounded border px-3 text-sm text-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
         >
-          削除
+          {ja.entry.remove}
         </button>
       </div>
 
       <div className="flex gap-2">
         <label className="flex-1 text-xs text-gray-500">
-          用量{substance.defaultUnit ? `（${substance.defaultUnit}）` : ''}
+          {ja.entry.dose}
+          {substance.defaultUnit ? `（${substance.defaultUnit}）` : ''}
           <input
             type="text"
             inputMode="decimal"
@@ -65,17 +67,17 @@ export default function SubstanceEntryCard({
               const raw = e.target.value.trim()
               onChange({ dose: raw === '' ? 0 : Number(raw) })
             }}
-            className="mt-1 h-11 w-full rounded border px-2 text-base"
+            className="mt-1 h-11 w-full rounded border px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           />
           <FieldErrors errors={doseErrors} />
         </label>
 
         <label className="flex-1 text-xs text-gray-500">
-          経路
+          {ja.entry.route}
           <select
             value={route}
             onChange={(e) => onChange({ route: e.target.value })}
-            className="mt-1 h-11 w-full rounded border px-2 text-base"
+            className="mt-1 h-11 w-full rounded border px-2 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
           >
             {routes.map((r) => (
               <option key={r} value={r}>

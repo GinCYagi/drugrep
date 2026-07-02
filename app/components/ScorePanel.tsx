@@ -1,4 +1,5 @@
 import type { RiskTag } from '@/src/types/domain'
+import { ja } from '@/src/lib/i18n/ja'
 
 type Props = {
   // 入力が無効なとき（null）はスコアを非表示（グレーアウト）にする。
@@ -6,34 +7,43 @@ type Props = {
   tags: RiskTag[]
 }
 
-// 0-33 低 / 34-66 中 / 67-100 高。色は Tailwind の green/amber/red 系。
-function level(score: number) {
-  if (score <= 33) return { label: '低', badge: 'bg-green-100 text-green-800', bar: 'bg-green-500' }
-  if (score <= 66) return { label: '中', badge: 'bg-amber-100 text-amber-800', bar: 'bg-amber-500' }
-  return { label: '高', badge: 'bg-red-100 text-red-800', bar: 'bg-red-500' }
+// スコアレベルの配色を1箇所に集約（0-33 低 / 34-66 中 / 67-100 高）。
+const LEVEL_STYLES = {
+  low: { label: ja.score.low, badge: 'bg-green-100 text-green-800', bar: 'bg-green-500' },
+  mid: { label: ja.score.mid, badge: 'bg-amber-100 text-amber-800', bar: 'bg-amber-500' },
+  high: { label: ja.score.high, badge: 'bg-red-100 text-red-800', bar: 'bg-red-500' },
+} as const
+
+function levelKey(score: number): keyof typeof LEVEL_STYLES {
+  if (score <= 33) return 'low'
+  if (score <= 66) return 'mid'
+  return 'high'
 }
 
 export default function ScorePanel({ finalScore, tags }: Props) {
-  const l = finalScore === null ? null : level(finalScore)
+  const style = finalScore === null ? null : LEVEL_STYLES[levelKey(finalScore)]
   const width = finalScore === null ? 0 : Math.max(0, Math.min(100, finalScore))
-  const barColor = l ? l.bar : 'bg-gray-300'
+  const barColor = style ? style.bar : 'bg-gray-300'
 
   return (
     <section className="sticky top-0 z-10 border-b bg-white p-4">
       <div className="flex items-end justify-between">
-        <div className="flex items-baseline gap-1">
-          <span
-            className={`text-[40px] font-bold leading-none ${
-              finalScore === null ? 'text-gray-300' : ''
-            }`}
-          >
-            {finalScore === null ? '—' : finalScore}
-          </span>
-          <span className="text-sm text-gray-500">/100</span>
+        <div>
+          <div className="text-xs text-gray-500">{ja.score.label}</div>
+          <div className="flex items-baseline gap-1">
+            <span
+              className={`text-[40px] font-bold leading-none ${
+                finalScore === null ? 'text-gray-300' : ''
+              }`}
+            >
+              {finalScore === null ? '—' : finalScore}
+            </span>
+            <span className="text-sm text-gray-500">/100</span>
+          </div>
         </div>
-        {l && (
-          <span className={`rounded px-2 py-1 text-sm font-medium ${l.badge}`}>
-            リスク {l.label}
+        {style && (
+          <span className={`rounded px-2 py-1 text-sm font-medium ${style.badge}`}>
+            {style.label}
           </span>
         )}
       </div>

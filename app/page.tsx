@@ -6,6 +6,7 @@ import { evaluateRisk } from '@/src/lib/evaluate'
 import { substances } from '@/src/lib/substances'
 import { interactionRules } from '@/src/lib/rules/interaction-rules'
 import type { RiskTag } from '@/src/types/domain'
+import { ja } from '@/src/lib/i18n/ja'
 import ScorePanel from './components/ScorePanel'
 import WarningBanner from './components/WarningBanner'
 import InteractionList from './components/InteractionList'
@@ -119,9 +120,9 @@ export default function Home() {
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col">
       <header className="flex items-center justify-between border-b p-4">
-        <span className="font-bold">Drug Risk Checker</span>
+        <span className="font-bold">{ja.app.title}</span>
         <Link href="/about" className="text-sm text-blue-600 underline">
-          About
+          {ja.app.aboutLink}
         </Link>
       </header>
 
@@ -136,7 +137,14 @@ export default function Home() {
 
         <SubstanceCombobox substances={substances} onAdd={addSubstance} />
 
-        <div className="space-y-3">
+        {entries.length === 0 && (
+          <div className="rounded border border-dashed p-4 text-center text-sm text-gray-500">
+            <p className="font-medium text-gray-700">{ja.empty.title}</p>
+            <p className="mt-1">{ja.empty.body}</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
           {perEntry.map((p) =>
             p.substance ? (
               <div key={p.entry.key} className="space-y-2">
@@ -156,9 +164,9 @@ export default function Home() {
       </div>
 
       <footer className="space-y-1 border-t p-4 text-xs text-gray-500">
-        <p>本アプリは医療助言ではありません。緊急時は119へ。</p>
+        <p>{ja.footer.disclaimer}</p>
         <Link href="/about" className="text-blue-600 underline">
-          アプリについて
+          {ja.footer.aboutLink}
         </Link>
       </footer>
     </main>
