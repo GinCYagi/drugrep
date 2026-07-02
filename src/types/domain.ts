@@ -147,3 +147,23 @@ export type CombinedRiskResult = {
   perDose: { drug: string; soloScore: number }[];
   triggered: TriggeredRule[];
 };
+
+// 単剤評価（calculateRisk）の UI 向け戻り値。
+// CombinedRiskResult は複数薬剤の合成結果（perDose / soloTotal を持つ）で軸が異なるため、
+// これとは別型にする。ただし firedInteractions / sources / tags は
+// 既存の TriggeredRule / SourceRef / RiskTag を再利用し、型の重複定義はしない。
+// breakdown は computeSoloRisk の内訳（base × routeFactor × doseFactor）と
+// interaction 加算を分解して UI から参照できるようにしたもの。
+export type RiskResult = {
+  finalScore: number;
+  breakdown: {
+    base: number;
+    routeFactor: number;
+    doseFactor: number;
+    interactionAdd: number;
+  };
+  firedInteractions: TriggeredRule[];
+  warnings: string[];
+  tags: RiskTag[];
+  sources: SourceRef[];
+};

@@ -2,7 +2,9 @@ import {
   CombinedRiskResult,
   DoseInput,
   InteractionMatch,
+  RiskResult,
   Route,
+  SourceRef,
   Substance,
   TriggeredRule,
 } from "@/src/types/domain";
@@ -52,6 +54,19 @@ function toRoute(value: string): Route | undefined {
     : undefined;
 }
 
+// 単剤 solo スコアの内訳（round 前の生数値）。
+// solo = base × routeFactor × doseFactor。計算式はここ一箇所に集約する。
+function soloBreakdown(
+  substance: Substance,
+  doseValue: number,
+  route: Route | undefined
+): { base: number; routeFactor: number; doseFactor: number; solo: number } {
+  const base = sumTagWeights(substance);
+  const routeFactor = getRouteMultiplier(substance, route);
+  const doseFactor = getDoseMultiplier(substance, doseValue);
+  return { base, routeFactor, doseFactor, solo: base * routeFactor * doseFactor };
+}
+
 // 単剤の solo スコア（round 前の生数値）。
 // calculateCombinedRisk は perDose ごとに本関数を呼び、最終合成時にまとめて round する。
 export function computeSoloRisk(
@@ -59,27 +74,83 @@ export function computeSoloRisk(
   doseValue: number,
   route: Route | undefined
 ): number {
-  const base = sumTagWeights(substance);
-  const routeMultiplier = getRouteMultiplier(substance, route);
-  const doseMultiplier = getDoseMultiplier(substance, doseValue);
-  return base * routeMultiplier * doseMultiplier;
+  return soloBreakdown(substance, doseValue, route).solo;
+}
+
+// interactionRules の発火判定（dedupe 済みの unique substance 集合を渡す）。
+// calculateRisk（単剤=1要素）と calculateCombinedRisk の両方から使う共通ロジック。
+function evaluateInteractions(uniqueSubstances: Substance[]): {
+  triggered: TriggeredRule[];
+  interactionAdd: number;
+  sources: SourceRef[];
+  labels: string[];
+} {
+  const triggered: TriggeredRule[] = [];
+  const sources: SourceRef[] = [];
+  const labels: string[] = [];
+  let interactionAdd = 0;
+  for (const rule of interactionRules) {
+    if (matchesAll(rule.requires, uniqueSubstances)) {
+      interactionAdd += rule.effect.value;
+      triggered.push({
+        ruleId: rule.id,
+        severity: rule.severity,
+        contribution: rule.effect.value,
+      });
+      labels.push(rule.label);
+      if (rule.sources) sources.push(...rule.sources);
+    }
+  }
+  return { triggered, interactionAdd, sources, labels };
 }
 
 export function calculateRisk(
   drug: string,
   dose: string,
   route: string
-): number {
+): RiskResult {
   const substance = findSubstance(drug);
   if (!substance) {
     // 未知物質は現段階では score=0 を返す。
     // 将来的には「未知＝評価不能」として unknown ステートを分離する前提。
     // 0（リスクなし）と unknown（判定不能）は本来別概念だが、いまは簡易化のため 0 に潰している。
-    return 0;
+    return {
+      finalScore: 0,
+      breakdown: { base: 0, routeFactor: 1, doseFactor: 1, interactionAdd: 0 },
+      firedInteractions: [],
+      warnings: [],
+      tags: [],
+      sources: [],
+    };
   }
-  return Math.round(
-    computeSoloRisk(substance, Number(dose), toRoute(route))
+
+  const { base, routeFactor, doseFactor, solo } = soloBreakdown(
+    substance,
+    Number(dose),
+    toRoute(route)
   );
+
+  // 単剤も 1 要素の unique 集合として同じ interaction 判定にかける
+  // （1 物質が複数タグを持つ場合は単剤でも発火し得る）。
+  const { triggered, interactionAdd, sources, labels } = evaluateInteractions([
+    substance,
+  ]);
+
+  // finalScore は既存の合成式（round(solo + interactionAdd)）を踏襲。
+  const finalScore = Math.round(solo + interactionAdd);
+
+  const warnings: string[] = [];
+  if (doseFactor > 1) warnings.push("設定用量が常用域を超えています");
+  warnings.push(...labels);
+
+  return {
+    finalScore,
+    breakdown: { base, routeFactor, doseFactor, interactionAdd },
+    firedInteractions: triggered,
+    warnings,
+    tags: substance.tags.map((t) => t.tag),
+    sources,
+  };
 }
 
 // 複数薬剤評価。
@@ -118,18 +189,7 @@ export function calculateCombinedRisk(
       .filter((s): s is Substance => s !== undefined)
   );
 
-  const triggered: TriggeredRule[] = [];
-  let interactionAdd = 0;
-  for (const rule of interactionRules) {
-    if (matchesAll(rule.requires, uniqueSubstances)) {
-      interactionAdd += rule.effect.value;
-      triggered.push({
-        ruleId: rule.id,
-        severity: rule.severity,
-        contribution: rule.effect.value,
-      });
-    }
-  }
+  const { triggered, interactionAdd } = evaluateInteractions(uniqueSubstances);
 
   // phase C: 合成（round は最終のみ）
   const finalScore = Math.round(soloTotal + interactionAdd);
