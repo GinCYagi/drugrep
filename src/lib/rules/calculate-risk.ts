@@ -10,6 +10,13 @@ import {
 } from "@/src/types/domain";
 import { findSubstance } from "@/src/lib/find-substance";
 import { interactionRules } from "@/src/lib/rules/interaction-rules";
+import { levelFor } from "@/src/lib/rules/score-level";
+
+// finalScore を 0–100 に丸める（式: clamp((base×route×dose)+interaction, 0, 100)）。
+// 適用は最終スコア確定の一点のみ（calculateRisk / calculateCombinedRisk）。
+function clampScore(n: number): number {
+  return Math.max(0, Math.min(100, n));
+}
 
 // routeFactor は暫定補正。吸収速度・バイオアベイラビリティの大小関係を
 // 粗く反映した値で、将来的に文献ベースの係数に置き換える前提。
@@ -116,6 +123,7 @@ export function calculateRisk(
     // 0（リスクなし）と unknown（判定不能）は本来別概念だが、いまは簡易化のため 0 に潰している。
     return {
       finalScore: 0,
+      level: levelFor(0),
       breakdown: { base: 0, routeFactor: 1, doseFactor: 1, interactionAdd: 0 },
       firedInteractions: [],
       warnings: [],
@@ -136,8 +144,8 @@ export function calculateRisk(
     substance,
   ]);
 
-  // finalScore は既存の合成式（round(solo + interactionAdd)）を踏襲。
-  const finalScore = Math.round(solo + interactionAdd);
+  // finalScore = clamp(round(solo + interactionAdd), 0, 100)。
+  const finalScore = clampScore(Math.round(solo + interactionAdd));
 
   const warnings: string[] = [];
   if (doseFactor > 1) warnings.push("設定用量が常用域を超えています");
@@ -145,6 +153,7 @@ export function calculateRisk(
 
   return {
     finalScore,
+    level: levelFor(finalScore),
     breakdown: { base, routeFactor, doseFactor, interactionAdd },
     firedInteractions: triggered,
     warnings,
@@ -193,8 +202,8 @@ export function calculateCombinedRisk(
     uniqueSubstances
   );
 
-  // phase C: 合成（round は最終のみ）
-  const finalScore = Math.round(soloTotal + interactionAdd);
+  // phase C: 合成（clamp + round は最終のみ）
+  const finalScore = clampScore(Math.round(soloTotal + interactionAdd));
 
   return {
     finalScore,

@@ -2,6 +2,7 @@ import {
   calculateRisk,
   calculateCombinedRisk,
 } from "@/src/lib/rules/calculate-risk";
+import { levelFor } from "@/src/lib/rules/score-level";
 import type { RiskResult, RiskTag } from "@/src/types/domain";
 import {
   RiskInputSchema,
@@ -54,6 +55,7 @@ export function evaluateRisk(raw: RawRiskInput): EvaluateResult {
 
   const result: RiskResult = {
     finalScore: combined.finalScore,
+    level: levelFor(combined.finalScore),
     // 集計 breakdown: solo 合算を base に置き、route/dose 係数は各エントリ側で
     // 消化済みのため 1。interactionAdd のみ相互作用加算を表す。
     // これにより finalScore = round(base × route × dose + interactionAdd) の関係を維持。

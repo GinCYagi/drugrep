@@ -132,6 +132,13 @@ export default function Home() {
       />
 
       <div className="flex-1 space-y-4 p-4">
+        <p className="rounded bg-gray-50 p-3 text-xs leading-relaxed text-gray-500">
+          {ja.disclaimer.short}{' '}
+          <Link href="/about" className="text-blue-600 underline">
+            {ja.disclaimer.detailLink}
+          </Link>
+        </p>
+
         <WarningBanner warnings={warnings} />
         <InteractionList interactions={interactions} />
 

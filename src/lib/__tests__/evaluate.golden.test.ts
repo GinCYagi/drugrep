@@ -66,6 +66,9 @@ describe("evaluateRisk — golden (success)", () => {
 
     const expected: RiskResult = {
       finalScore: 8,
+      // 【Task5B で構造追加】RiskResult に level を追加（levelFor で導出）。
+      //   finalScore 8 → level "low"（0–33）。以降の成功ケースも同様に level を固定する。
+      level: "low",
       breakdown: { base: 8, routeFactor: 1, doseFactor: 1, interactionAdd: 0 },
       firedInteractions: [],
       warnings: [],
@@ -86,6 +89,7 @@ describe("evaluateRisk — golden (success)", () => {
 
     const expected: RiskResult = {
       finalScore: 11,
+      level: "low", // 11 → low（0–33）
       breakdown: { base: 8, routeFactor: 1.4, doseFactor: 1, interactionAdd: 0 },
       firedInteractions: [],
       warnings: [],
@@ -115,6 +119,7 @@ describe("evaluateRisk — golden (success)", () => {
 
     const expected: RiskResult = {
       finalScore: 10,
+      level: "low", // 10 → low（0–33）
       breakdown: { base: 8, routeFactor: 1, doseFactor: 1.3, interactionAdd: 0 },
       firedInteractions: [],
       warnings: ["設定用量が常用域を超えています"],
@@ -147,6 +152,7 @@ describe("evaluateRisk — golden (success)", () => {
 
     const expected: RiskResult = {
       finalScore: 18,
+      level: "low", // 18 → low（0–33）。単剤の到達上端でも low どまり。
       breakdown: { base: 8, routeFactor: 1.4, doseFactor: 1.6, interactionAdd: 0 },
       firedInteractions: [],
       warnings: ["設定用量が常用域を超えています"],
@@ -165,6 +171,8 @@ describe("evaluateRisk — golden (success)", () => {
 
     expect(res.result).toMatchObject({
       finalScore: expect.any(Number),
+      // 【Task5B で構造追加】level を追加。
+      level: expect.any(String),
       breakdown: {
         base: expect.any(Number),
         routeFactor: expect.any(Number),
@@ -181,6 +189,7 @@ describe("evaluateRisk — golden (success)", () => {
         "breakdown",
         "finalScore",
         "firedInteractions",
+        "level",
         "sources",
         "tags",
         "warnings",
@@ -233,6 +242,7 @@ describe("evaluateRisk — golden (interaction)", () => {
 
     const expected: RiskResult = {
       finalScore: 19,
+      level: "low", // 19 → low（0–33）。相互作用加算後も low どまり。
       // 集計 breakdown: base=soloTotal(9), route/dose 係数は各エントリで消化済みのため 1。
       breakdown: { base: 9, routeFactor: 1, doseFactor: 1, interactionAdd: 10 },
       firedInteractions: [
@@ -287,6 +297,78 @@ describe("evaluateRisk — golden (interaction)", () => {
 });
 
 // -----------------------------------------------------------------------------
+// Task5B: clamp（0–100）と level（low/mid/high）の到達可能性ゴールデン。
+// 単剤の到達スコアは低いため、mid/high と clamp は複数（重複可）エントリで再現する。
+// 同一物質の重複入力は soloTotal に加算される（相互作用は dedupe 後に判定）。
+// -----------------------------------------------------------------------------
+describe("evaluateRisk — golden (clamp & level)", () => {
+  // 同一エントリを n 件並べた入力を作る（tramadol_combo dose2 oral の solo=7）。
+  function repeatTramadol(n: number): RawRiskInput {
+    return {
+      entries: Array.from({ length: n }, (_, i) => ({
+        entryKey: `k${i}`,
+        substanceId: "tramadol_combo",
+        dose: 2,
+        route: "oral",
+      })),
+    };
+  }
+
+  it("中程度の合算スコアは level=mid になる", () => {
+    // 5 件 × solo 7 = 35（34–66 → mid）。相互作用は dedupe で1種のため非発火。
+    const res = evaluateRisk(repeatTramadol(5));
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const expected: RiskResult = {
+      finalScore: 35,
+      level: "mid", // 35 → mid（34–66）
+      breakdown: { base: 35, routeFactor: 1, doseFactor: 1, interactionAdd: 0 },
+      firedInteractions: [],
+      warnings: [],
+      tags: [
+        "opioid_like",
+        "respiratory_depression",
+        "serotonergic",
+        "seizure_threshold_lowering",
+        "depressant",
+      ],
+      sources: [],
+    };
+    expect(res.result).toEqual(expected);
+  });
+
+  it("クランプ前スコアが100を超える入力で finalScore===100 に丸められ level=high になる", () => {
+    // 15 件 × solo 7 = 105（>100）。clamp((105)+0, 0, 100) = 100。
+    // breakdown.base は clamp 前の生 soloTotal(105) を保持し、finalScore のみ 100 に張り付く。
+    const res = evaluateRisk(repeatTramadol(15));
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const expected: RiskResult = {
+      finalScore: 100,
+      level: "high", // 100 → high（67–100）
+      breakdown: { base: 105, routeFactor: 1, doseFactor: 1, interactionAdd: 0 },
+      firedInteractions: [],
+      warnings: [],
+      tags: [
+        "opioid_like",
+        "respiratory_depression",
+        "serotonergic",
+        "seizure_threshold_lowering",
+        "depressant",
+      ],
+      sources: [],
+    };
+    expect(res.result).toEqual(expected);
+
+    // clamp が実際に効いていること（生の合算は 100 を超えている）。
+    expect(res.result.breakdown.base).toBeGreaterThan(100);
+    expect(res.result.finalScore).toBe(100);
+  });
+});
+
+// -----------------------------------------------------------------------------
 // エイリアス解決の calculateRisk 層ゴールデン（下位層の直接固定）。
 //
 // Task5A 修正後は validation が findSubstance で別名解決するため、evaluateRisk 層でも
@@ -300,6 +382,7 @@ describe("calculateRisk — golden (alias resolution)", () => {
   it("正式 id と商品名/日本語名/一般名の別名は同一の評価結果になる", () => {
     const canonicalExpected: RiskResult = {
       finalScore: 8,
+      level: "low", // 8 → low（0–33）
       breakdown: { base: 8, routeFactor: 1, doseFactor: 1, interactionAdd: 0 },
       firedInteractions: [],
       warnings: [],

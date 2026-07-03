@@ -4,6 +4,10 @@ export type Route = "oral" | "nasal" | "rectal";
 
 export type AlertLevel = "stable" | "caution" | "high" | "critical";
 
+// finalScore（0–100）の3段階レベル区分。AlertLevel（アラート用・stable/critical を含む）
+// とは別軸で、スコア表示の色分け・ラベルに使う。閾値は levelFor に一元化する。
+export type ScoreLevel = "low" | "mid" | "high";
+
 export type RiskTag =
   | "stimulant"
   | "depressant"
@@ -159,6 +163,8 @@ export type CombinedRiskResult = {
 // interaction 加算を分解して UI から参照できるようにしたもの。
 export type RiskResult = {
   finalScore: number;
+  // finalScore から levelFor で導出したレベル区分（low/mid/high）。
+  level: ScoreLevel;
   breakdown: {
     base: number;
     routeFactor: number;

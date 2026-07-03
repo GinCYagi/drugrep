@@ -10,6 +10,12 @@ export const ja = {
   },
   warnings: { heading: "警告" },
   interactions: { heading: "相互作用" },
+  disclaimer: {
+    // 評価結果画面に常時表示する短い注意書き。
+    short:
+      "スコアは登録済みルールに基づく相対的な目安です。低スコアも安全を意味しません。医療上の助言ではありません。緊急時は119へ。",
+    detailLink: "限界と注意（詳細）",
+  },
   entry: {
     dose: "用量",
     route: "経路",

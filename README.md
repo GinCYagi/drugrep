@@ -22,6 +22,8 @@
 - `assertRuleSources` による実行時検証は今後実装予定
 - 現時点では一部ルールの出典整備が未完了
 - スコア: `finalScore = clamp((base × route × dose) + interaction, 0, 100)`
+- 評価結果 `RiskResult` は `finalScore`（0-100）と `level` を持つ（`finalScore` はリネームしない）
+- レベルは `levelFor(finalScore)` で一元判定: `low`(0–33) / `mid`(34–66) / `high`(67–100)
 - バリデーションは `src/lib/evaluate.ts` の境界で実施。ルールエンジンはZod非依存
 
 ## セットアップ

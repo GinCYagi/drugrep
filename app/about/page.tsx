@@ -42,17 +42,35 @@ export default function AboutPage() {
           <code>finalScore = clamp((base × route × dose) + interaction, 0, 100)</code>
         </pre>
         <p className="text-sm leading-relaxed text-gray-700">
+          スコアは
+          <strong>低リスク(0〜33)</strong>・<strong>中リスク(34〜66)</strong>・
+          <strong>高リスク(67〜100)</strong>
+          の3段階に区分して色分け表示します。
+        </p>
+        <p className="text-sm leading-relaxed text-gray-700">
           各係数の根拠は下記の出典一覧を参照してください。
         </p>
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-lg font-medium">限界と注意</h2>
+        <h2 className="text-lg font-medium">限界と制限事項</h2>
         <ul className="list-disc space-y-1 pl-5 text-sm leading-relaxed text-gray-700">
-          <li>個人差(体重、耐性、代謝、併用薬、健康状態)は反映されません</li>
+          <li>本ツールは情報提供のみを目的とし、医療上の助言ではありません</li>
+          <li>
+            スコアは登録済みルールに基づく相対的な目安であり、絶対的な安全度ではありません
+          </li>
           <li>スコアが低いことは安全を意味しません</li>
-          <li>掲載物質・相互作用は網羅的ではありません</li>
+          <li>
+            評価対象は登録済みの物質のみです（未登録の物質は評価されません）
+          </li>
+          <li>
+            相互作用は登録済みの組み合わせのみを評価します（未登録の相互作用は検出されません）
+          </li>
+          <li>個人差(体重、耐性、代謝、併用薬、健康状態)は反映されません</li>
           <li>情報は出典時点のものであり、最新の知見と異なる場合があります</li>
+          <li>
+            意識障害・けいれん・呼吸困難などの緊急時はためらわず119へ
+          </li>
         </ul>
       </section>
 
