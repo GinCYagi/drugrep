@@ -146,6 +146,9 @@ export type CombinedRiskResult = {
   interactionAdd: number;
   perDose: { drug: string; soloScore: number }[];
   triggered: TriggeredRule[];
+  // 発火ルールの引用元（dedupe 前の連結）。evaluateInteractions が算出済みの
+  // 値をそのまま公開する（引用元を UI/上位層へ伝播させるため）。
+  sources: SourceRef[];
 };
 
 // 単剤評価（calculateRisk）の UI 向け戻り値。

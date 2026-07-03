@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { substances } from "@/src/lib/substances";
+import { findSubstance } from "@/src/lib/find-substance";
 import type { Route } from "@/src/types/domain";
 
 // バリデーションはこの層（と evaluate.ts）で完結させ、src/lib/rules/ には持ち込まない。
@@ -11,9 +11,6 @@ export type FieldError = {
   field: "substanceId" | "dose" | "route" | "entries";
   message: string;
 };
-
-// 物質マスターからの導出用ルックアップ（データ参照のみ）。
-const byId = new Map(substances.map((s) => [s.id, s]));
 
 // dose の型ゲートは「JS の number であること」だけに限定し、
 // NaN/Infinity/正負/上限の意味検証は superRefine に集約する（z.number は NaN/Infinity を弾くため）。
@@ -36,9 +33,12 @@ export const RiskInputSchema = z
   })
   .superRefine((input, ctx) => {
     input.entries.forEach((entry, i) => {
-      const substance = byId.get(entry.substanceId);
+      // substanceId は正規 id だけでなく別名（商品名・和名・一般名）も受理する。
+      // 解決は findSubstance に委譲する（trim + lowercase の完全一致）。
+      // 未知の物質名は undefined となり、従来どおり substanceId エラーになる。
+      const substance = findSubstance(entry.substanceId);
 
-      // substanceId が substances に存在するか
+      // substanceId が substances に存在するか（別名解決を含む）
       if (!substance) {
         ctx.addIssue({
           code: "custom",

@@ -187,16 +187,111 @@ describe("evaluateRisk — golden (success)", () => {
       ].sort()
     );
   });
+
+  it("別名（商品名・和名・一般名）入力でも正規 id と同一の評価結果になる", () => {
+    // 【Task5A 修正で挙動変更】以前は validation が正規 id 完全一致のみ受理し、
+    // 別名は evaluateRisk で substanceId エラーになっていた。修正後は validation が
+    // findSubstance で別名解決するため、別名入力も受理され正規 id と同一結果を返す。
+    const canonical = evaluateRisk(input());
+    expect(canonical.ok).toBe(true);
+    if (!canonical.ok) return;
+
+    // methylphenidate の別名: リタリン/ritalin/mph（alias）、
+    // メチルフェニデート（displayName）、Methylphenidate（genericName）。
+    for (const alias of [
+      "リタリン",
+      "ritalin",
+      "mph",
+      "メチルフェニデート",
+      "Methylphenidate",
+    ]) {
+      const res = evaluateRisk(input({ substanceId: alias }));
+      expect(res.ok).toBe(true);
+      if (!res.ok) return;
+      expect(res.result).toEqual(canonical.result);
+    }
+  });
+});
+
+describe("evaluateRisk — golden (interaction)", () => {
+  it("複数物質入力（tramadol_combo + moclobemide）で相互作用が finalScore に加算される", () => {
+    // 【Task5A 修正で挙動変更】以前の evaluateRisk は entries[0] の単剤しか評価せず、
+    // 相互作用は常に非発火（firedInteractions:[], interactionAdd:0）だった。
+    // 修正後は複数エントリを calculateCombinedRisk に委譲して相互作用を発火させる。
+    //
+    // soloTotal = 7(tramadol_combo) + 2(moclobemide) = 9
+    // interactionAdd = 10（maoi_plus_serotonergic）
+    // finalScore = round(9 + 10) = 19
+    const res = evaluateRisk({
+      entries: [
+        { entryKey: "a", substanceId: "tramadol_combo", dose: 2, route: "oral" },
+        { entryKey: "b", substanceId: "moclobemide", dose: 300, route: "oral" },
+      ],
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const expected: RiskResult = {
+      finalScore: 19,
+      // 集計 breakdown: base=soloTotal(9), route/dose 係数は各エントリで消化済みのため 1。
+      breakdown: { base: 9, routeFactor: 1, doseFactor: 1, interactionAdd: 10 },
+      firedInteractions: [
+        { ruleId: "maoi_plus_serotonergic", severity: "high", contribution: 10 },
+      ],
+      // 各エントリとも常用域内（tramadol 2錠 / moclobemide 300mg）で用量警告なし。
+      warnings: [],
+      // tags は各エントリの和集合（tramadol_combo の5タグ + moclobemide の serotonergic は既出）。
+      tags: [
+        "opioid_like",
+        "respiratory_depression",
+        "serotonergic",
+        "seizure_threshold_lowering",
+        "depressant",
+      ],
+      // NOTE(sources): 相互作用は発火しているが sources は現状 []。
+      //   interactionRules のどの rule も sources を定義しておらず、コードベースに
+      //   参照カタログも存在しないため（捏造禁止方針により未追加）。
+      //   伝播経路自体は combined.sources → RiskResult.sources で配線済み。
+      //   ルールに sources データが入れば、この期待値は非空へ更新する想定。
+      sources: [],
+    };
+    expect(res.result).toEqual(expected);
+
+    // 相互作用が実際に発火し、finalScore に反映されていること（構造非依存の確認）。
+    expect(res.result.firedInteractions.length).toBeGreaterThan(0);
+    expect(res.result.breakdown.interactionAdd).toBeGreaterThan(0);
+    expect(res.result.firedInteractions[0]).toMatchObject({
+      ruleId: "maoi_plus_serotonergic",
+      contribution: res.result.breakdown.interactionAdd,
+    });
+  });
+
+  it("複数物質を別名で入力しても正規 id 入力と同一の集計結果になる", () => {
+    // 別名解決（findSubstance）が複数エントリ経路でも効くことを固定。
+    const byId = evaluateRisk({
+      entries: [
+        { entryKey: "a", substanceId: "tramadol_combo", dose: 2, route: "oral" },
+        { entryKey: "b", substanceId: "moclobemide", dose: 300, route: "oral" },
+      ],
+    });
+    const byAlias = evaluateRisk({
+      entries: [
+        { entryKey: "a", substanceId: "トラムセット", dose: 2, route: "oral" }, // tramadol_combo alias
+        { entryKey: "b", substanceId: "aurorix", dose: 300, route: "oral" }, // moclobemide alias
+      ],
+    });
+    expect(byId.ok && byAlias.ok).toBe(true);
+    if (!byId.ok || !byAlias.ok) return;
+    expect(byAlias.result).toEqual(byId.result);
+  });
 });
 
 // -----------------------------------------------------------------------------
-// エイリアス解決は evaluateRisk 経由では検証できないため、calculateRisk 層で固定する。
+// エイリアス解決の calculateRisk 層ゴールデン（下位層の直接固定）。
 //
-// 理由: evaluateRisk はまず validation を通す。validation は substanceId を
-// 正式 id の完全一致でしか受け付けない（byId マップ引き）。よって別名を
-// substanceId に渡すと validation で弾かれる（下の validation ゴールデン参照）。
-// 別名 → 物質の解決は findSubstance / calculateRisk 側の責務であり、
-// そのゴールデンをここで固定する。
+// Task5A 修正後は validation が findSubstance で別名解決するため、evaluateRisk 層でも
+// 別名が受理される（success 側「別名〜同一の評価結果」で固定済み）。ここは下位層の
+// calculateRisk が findSubstance による別名 → 物質解決を行うことを直接固定する。
 // -----------------------------------------------------------------------------
 describe("calculateRisk — golden (alias resolution)", () => {
   // 別名入力は正式名称入力と完全に同一の RiskResult を返す。
@@ -223,10 +318,8 @@ describe("calculateRisk — golden (alias resolution)", () => {
 });
 
 // -----------------------------------------------------------------------------
-// 相互作用ケースは evaluateRisk（単剤 entries[0] のみ評価）では発火しない。
-// interactionRules は複数物質/複数タグの組合せを要求するため、単剤では加算 0。
-// 相互作用の発火は calculateCombinedRisk（複数薬剤合成）層の責務であり、
-// そのゴールデンをここで固定する。
+// calculateCombinedRisk（複数薬剤合成）層の相互作用ゴールデン（下位層の直接固定）。
+// evaluateRisk 層の同ケースは上の「evaluateRisk — golden (interaction)」で固定済み。
 //
 // 使用ペア: tramadol_combo + moclobemide
 //   → maoi_plus_serotonergic ルールが発火（moclobemide + serotonergic×2）。
@@ -258,6 +351,9 @@ describe("calculateCombinedRisk — golden (interaction)", () => {
           contribution: 10,
         },
       ],
+      // 【Task5A で構造変更】CombinedRiskResult に sources を追加（引用元の伝播用）。
+      //   発火ルールに sources 未定義のため現状 []（詳細はサマリー参照）。
+      sources: [],
     });
 
     // 相互作用が実際に発火し、加算に寄与していること。
@@ -334,11 +430,11 @@ describe("evaluateRisk — golden (validation)", () => {
     expect(err!.message.length).toBeGreaterThan(0);
   });
 
-  it("別名を substanceId に渡すと validation で拒否される（正式 id のみ許可）", () => {
-    // 現状の挙動固定: validation は id 完全一致のみ受理するため、
-    // 別名（例: リタリン）は substanceId エラーになる。
-    // 別名解決は calculateRisk 層でのみ機能する（上の alias ゴールデン参照）。
-    const res = evaluateRisk(input({ substanceId: "リタリン" }));
+  it("id・別名のいずれにも一致しない文字列は substanceId エラーになる", () => {
+    // 【Task5A 修正で挙動変更】別名（例: リタリン）は受理されるようになったため、
+    // 旧「別名は拒否」テストは success 側の別名同一性ゴールデンへ置き換えた。
+    // ここでは id にも別名にも一致しない文字列が従来どおり拒否されることを固定する。
+    const res = evaluateRisk(input({ substanceId: "not-a-real-alias" }));
     expect(res.ok).toBe(false);
     if (res.ok) return;
 

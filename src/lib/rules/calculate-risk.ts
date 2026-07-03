@@ -189,7 +189,9 @@ export function calculateCombinedRisk(
       .filter((s): s is Substance => s !== undefined)
   );
 
-  const { triggered, interactionAdd } = evaluateInteractions(uniqueSubstances);
+  const { triggered, interactionAdd, sources } = evaluateInteractions(
+    uniqueSubstances
+  );
 
   // phase C: 合成（round は最終のみ）
   const finalScore = Math.round(soloTotal + interactionAdd);
@@ -200,6 +202,7 @@ export function calculateCombinedRisk(
     interactionAdd,
     perDose,
     triggered,
+    sources,
   };
 }
 
