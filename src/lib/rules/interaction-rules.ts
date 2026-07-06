@@ -1,4 +1,5 @@
 import { InteractionRule } from "@/src/types/domain";
+import { src } from "@/src/lib/rules/source-catalog";
 
 // interactionRules はアプリ内部の相対評価ルール（暫定値 / 要レビュー）。
 // 医療的勧告ではなく、calculateCombinedRisk の加算寄与を決めるための内部スケール。
@@ -19,6 +20,11 @@ export const interactionRules: InteractionRule[] = [
       { kind: "tag", tag: "serotonergic", minCount: 2 },
     ],
     effect: { kind: "add", value: 10 },
+    // Task5C: 承認済み PI（MAOI 側 + セロトニン作動側）。medical ロジックは不変。
+    sources: [
+      src("moclobemide_aurorix_pi_20231007_v4.5"),
+      src("tramadol-acetaminophen_tramset_pi_20240823"),
+    ],
   },
   {
     id: "depressant_stacking",
@@ -28,6 +34,12 @@ export const interactionRules: InteractionRule[] = [
     severity: "caution",
     requires: [{ kind: "tag", tag: "depressant", minCount: 2 }],
     effect: { kind: "add", value: 6 },
+    // Task5C: 中枢抑制作用を持つ承認済み PI（プレガバリン・トラムセット・エスゾピクロン）。
+    sources: [
+      src("pregabalin_lyrica_pi_20251201"),
+      src("tramadol-acetaminophen_tramset_pi_20240823"),
+      src("eszopiclone_lunesta_pi_20241216"),
+    ],
   },
   {
     id: "opioid_plus_sedative_hypnotic",
@@ -40,6 +52,12 @@ export const interactionRules: InteractionRule[] = [
       { kind: "tag", tag: "sedative_hypnotic", minCount: 1 },
     ],
     effect: { kind: "add", value: 8 },
+    // Task5C: オピオイド様（トラムセット）× 睡眠薬様（エスゾピクロン・プレガバリン）の承認済み PI。
+    sources: [
+      src("tramadol-acetaminophen_tramset_pi_20240823"),
+      src("eszopiclone_lunesta_pi_20241216"),
+      src("pregabalin_lyrica_pi_20251201"),
+    ],
   },
   {
     id: "seizure_threshold_with_stimulant",
@@ -52,5 +70,11 @@ export const interactionRules: InteractionRule[] = [
       { kind: "tag", tag: "stimulant", minCount: 1 },
     ],
     effect: { kind: "add", value: 4 },
+    // Task5C: けいれん閾値低下（トラムセット）× 刺激系（メチルフェニデート concerta/ritalin）の承認済み PI。
+    sources: [
+      src("tramadol-acetaminophen_tramset_pi_20240823"),
+      src("methylphenidate_concerta_pi_20260624"),
+      src("methylphenidate_ritalin_pi_20260704"),
+    ],
   },
 ];

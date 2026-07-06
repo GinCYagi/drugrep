@@ -1,18 +1,15 @@
 import Link from 'next/link'
-
-type SourceRef = {
-  id: string
-  title: string
-  url?: string
-  note?: string
-}
+import { interactionRules } from '@/src/lib/rules/interaction-rules'
+import { aggregateSources } from '@/src/lib/rules/aggregate-sources'
 
 export default function AboutPage() {
-  // 出典データの取得元（既存の SourceRef 配列ベース）を維持。
-  // NOTE: コードベースに aggregateSources / SourceRef.kind は未実装のため、
-  //   現状は空配列＝未登録表示。将来 kind 別グルーピングを行う場合は
-  //   src/lib 側に集約関数を用意する前提（本タスクではロジック変更禁止のため未着手）。
-  const sources: SourceRef[] = []
+  // 出典一覧は interactionRules が参照する SourceRef を集約して表示する。
+  // 複数ルールが同一出典を参照した場合の重複は aggregateSources が id で除去する。
+  // 現状は各ルールの sources 未整備のため空（＝「未登録」表示）。実データが
+  // 入り次第、コード変更なしでこの一覧に反映される。
+  const sources = aggregateSources(
+    interactionRules.flatMap((r) => r.sources ?? [])
+  )
 
   return (
     <main className="mx-auto max-w-md space-y-6 p-4">

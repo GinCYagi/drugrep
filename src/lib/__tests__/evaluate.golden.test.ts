@@ -258,12 +258,21 @@ describe("evaluateRisk — golden (interaction)", () => {
         "seizure_threshold_lowering",
         "depressant",
       ],
-      // NOTE(sources): 相互作用は発火しているが sources は現状 []。
-      //   interactionRules のどの rule も sources を定義しておらず、コードベースに
-      //   参照カタログも存在しないため（捏造禁止方針により未追加）。
-      //   伝播経路自体は combined.sources → RiskResult.sources で配線済み。
-      //   ルールに sources データが入れば、この期待値は非空へ更新する想定。
-      sources: [],
+      // 【Task5C Phase2 で更新】理由: maoi_plus_serotonergic ルールに承認済み PI を
+      //   紐付けたため、発火時の sources が非空になった（旧: [] ）。
+      //   このケースは R1 のみ発火 → R1.sources（moclobemide PI, tramadol配合 PI）が伝播する。
+      sources: [
+        {
+          id: "moclobemide_aurorix_pi_20231007_v4.5",
+          title: "AURORIX® Product Information",
+          note: "Viatris Pty Ltd (TGA Australia) / v4.5 2023-10-07 / https://www.tga.gov.au/resources/artg/9987",
+        },
+        {
+          id: "tramadol-acetaminophen_tramset_pi_20240823",
+          title: "トラムセット配合錠 電子添文",
+          note: "ヤンセンファーマ株式会社 / 2024-08-23 / https://www.pmda.go.jp/PmdaSearch/rdDetail/iyaku/1149117F1020_1?user=1",
+        },
+      ],
     };
     expect(res.result).toEqual(expected);
 
@@ -434,9 +443,20 @@ describe("calculateCombinedRisk — golden (interaction)", () => {
           contribution: 10,
         },
       ],
-      // 【Task5A で構造変更】CombinedRiskResult に sources を追加（引用元の伝播用）。
-      //   発火ルールに sources 未定義のため現状 []（詳細はサマリー参照）。
-      sources: [],
+      // 【Task5C Phase2 で更新】理由: maoi_plus_serotonergic に承認済み PI を紐付けたため、
+      //   CombinedRiskResult.sources が非空に（R1 のみ発火 → R1.sources が伝播）。
+      sources: [
+        {
+          id: "moclobemide_aurorix_pi_20231007_v4.5",
+          title: "AURORIX® Product Information",
+          note: "Viatris Pty Ltd (TGA Australia) / v4.5 2023-10-07 / https://www.tga.gov.au/resources/artg/9987",
+        },
+        {
+          id: "tramadol-acetaminophen_tramset_pi_20240823",
+          title: "トラムセット配合錠 電子添文",
+          note: "ヤンセンファーマ株式会社 / 2024-08-23 / https://www.pmda.go.jp/PmdaSearch/rdDetail/iyaku/1149117F1020_1?user=1",
+        },
+      ],
     });
 
     // 相互作用が実際に発火し、加算に寄与していること。

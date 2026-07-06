@@ -45,3 +45,6 @@ _legacy_backup/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Prescription drug documents: PI / IF / PMDA safety information
+/references/
