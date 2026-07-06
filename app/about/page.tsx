@@ -1,6 +1,16 @@
 import Link from 'next/link'
 import { interactionRules } from '@/src/lib/rules/interaction-rules'
 import { aggregateSources } from '@/src/lib/rules/aggregate-sources'
+import { scoreBands } from '@/src/lib/rules/score-level'
+import type { ScoreLevel } from '@/src/types/domain'
+
+// レベル→表示ラベル。閾値・範囲は score-level.ts（scoreBands）が正典で、
+// ここでは low/mid/high にラベルを対応づけるのみ（数値はハードコードしない）。
+const RISK_BAND_LABELS: Record<ScoreLevel, string> = {
+  low: '低リスク',
+  mid: '中リスク',
+  high: '高リスク',
+}
 
 export default function AboutPage() {
   // 出典一覧は interactionRules が参照する SourceRef を集約して表示する。
@@ -40,8 +50,14 @@ export default function AboutPage() {
         </pre>
         <p className="text-sm leading-relaxed text-gray-700">
           スコアは
-          <strong>低リスク(0〜33)</strong>・<strong>中リスク(34〜66)</strong>・
-          <strong>高リスク(67〜100)</strong>
+          {scoreBands().map((b, i) => (
+            <span key={b.level}>
+              {i > 0 && '・'}
+              <strong>
+                {RISK_BAND_LABELS[b.level]}({b.min}〜{b.max})
+              </strong>
+            </span>
+          ))}
           の3段階に区分して色分け表示します。
         </p>
         <p className="text-sm leading-relaxed text-gray-700">

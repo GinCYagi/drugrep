@@ -18,3 +18,21 @@ export function levelFor(finalScore: number): ScoreLevel {
   if (finalScore <= SCORE_LEVEL_THRESHOLDS.mid) return "mid";
   return "high";
 }
+
+// スコア表示の下限・上限（両端含む）。levelFor は範囲外でも破綻しないが、
+// バンド表示の端点として 0–100 をここで単一ソース化する。
+export const SCORE_MIN = 0;
+export const SCORE_MAX = 100;
+
+// 表示用: 各レベルのスコア範囲（min–max, 両端含む）を SCORE_LEVEL_THRESHOLDS から導出。
+// UI（/about のバンド説明など）が閾値をハードコードせず、ここから導出するための helper。
+// levelFor と同じ閾値を用いるため、閾値を変えれば表示も自動追従する。
+export type ScoreBand = { level: ScoreLevel; min: number; max: number };
+
+export function scoreBands(): ScoreBand[] {
+  return [
+    { level: "low", min: SCORE_MIN, max: SCORE_LEVEL_THRESHOLDS.low },
+    { level: "mid", min: SCORE_LEVEL_THRESHOLDS.low + 1, max: SCORE_LEVEL_THRESHOLDS.mid },
+    { level: "high", min: SCORE_LEVEL_THRESHOLDS.mid + 1, max: SCORE_MAX },
+  ];
+}
