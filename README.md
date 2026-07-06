@@ -18,12 +18,14 @@
 
 - `substances.ts` はデータ専用。ロジックを埋め込まない
 - `calculateRisk` はデータ駆動(if-chain禁止)。物質・ルール追加は構造変更なしで可能
-- 出典情報は `SourceRef` で管理する設計方針
-- `assertRuleSources` による実行時検証は今後実装予定
-- 現時点では一部ルールの出典整備が未完了
-- スコア: `finalScore = clamp((base × route × dose) + interaction, 0, 100)`
-- 評価結果 `RiskResult` は `finalScore`（0-100）と `level` を持つ（`finalScore` はリネームしない）
-- レベルは `levelFor(finalScore)` で一元判定: `low`(0–33) / `mid`(34–66) / `high`(67–100)
+- スコア（単剤）: `finalScore = clamp(round(solo + interactionAdd), 0, 100)`、`solo = base × routeFactor × doseFactor`（`clamp` は `src/lib/rules/calculate-risk.ts` の `clampScore` = `Math.max(0, Math.min(100, …))`）
+- スコア（複数薬）: `soloTotal`（各エントリ `solo` の総和）+ `interactionAdd`。相互作用は dedupe 後のユニーク物質集合で判定（`calculateCombinedRisk`）
+- `interactionAdd` は発火した相互作用ルールの寄与（`effect.value`）の合計
+- 評価結果 `RiskResult` のフィールド: `finalScore` / `level` / `breakdown{base,routeFactor,doseFactor,interactionAdd}` / `firedInteractions` / `warnings` / `tags` / `sources`（`finalScore` はリネームしない）
+- レベル閾値の正典は `src/lib/rules/score-level.ts`（`SCORE_LEVEL_THRESHOLDS` = `low:33 / mid:66`、`SCORE_MIN`/`SCORE_MAX` = 0/100）。`levelFor(finalScore)` で一元判定: `low`(0–33) / `mid`(34–66) / `high`(67–100)
+- `/about` のバンド説明は `scoreBands()`（`score-level.ts`）から導出し、閾値をハードコードしない
+- 出典は `SourceRef` カタログ（`src/lib/sources.ts`）を正典とし、ルールは `src("id")` で参照（`interaction-rules.ts`）。発火ルールの出典は `RiskResult.sources` に伝播し、`/about` で `aggregateSources`（id 重複除去）して表示
+- `assertRuleSources` は各ルールの出典非空をテスト時に検証（実装済み）。MVP は代表 PI 6 件を採用済み
 - バリデーションは `src/lib/evaluate.ts` の境界で実施。ルールエンジンはZod非依存
 
 ## セットアップ
