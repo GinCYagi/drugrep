@@ -73,7 +73,7 @@ export const RiskInputSchema = z
           ctx.addIssue({
             code: "custom",
             path: ["entries", i, "dose"],
-            message: `用量が上限(${ceiling}${substance.defaultUnit ?? ""})を超えています`,
+            message: `評価可能な用量の範囲(〜${ceiling}${substance.defaultUnit ?? ""})を超えています。これは評価モデルの適用上限であり、添付文書の承認用量ではありません`,
           });
         }
       }

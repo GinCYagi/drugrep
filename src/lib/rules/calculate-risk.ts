@@ -148,7 +148,10 @@ export function calculateRisk(
   const finalScore = clampScore(Math.round(solo + interactionAdd));
 
   const warnings: string[] = [];
-  if (doseFactor > 1) warnings.push("設定用量が常用域を超えています");
+  if (doseFactor > 1)
+    warnings.push(
+      "設定用量は評価モデル上では高用量域として扱われます（この区分は評価モデル用で、添付文書の承認最大用量とは異なります）"
+    );
   warnings.push(...labels);
 
   return {

@@ -122,7 +122,11 @@ describe("evaluateRisk — golden (success)", () => {
       level: "low", // 10 → low（0–33）
       breakdown: { base: 8, routeFactor: 1, doseFactor: 1.3, interactionAdd: 0 },
       firedInteractions: [],
-      warnings: ["設定用量が常用域を超えています"],
+      // 【Reject 対応で文言更新】「常用域」（臨床用語）→ 内部モデルであることが分かる表現へ。
+      //   doseFactor>1（commonMax 超）で出る警告。数値・doseFactor は不変、文言のみ変更。
+      warnings: [
+        "設定用量は評価モデル上では高用量域として扱われます（この区分は評価モデル用で、添付文書の承認最大用量とは異なります）",
+      ],
       tags: MPH_TAGS,
       sources: [],
     };
@@ -155,7 +159,9 @@ describe("evaluateRisk — golden (success)", () => {
       level: "low", // 18 → low（0–33）。単剤の到達上端でも low どまり。
       breakdown: { base: 8, routeFactor: 1.4, doseFactor: 1.6, interactionAdd: 0 },
       firedInteractions: [],
-      warnings: ["設定用量が常用域を超えています"],
+      warnings: [
+        "設定用量は評価モデル上では高用量域として扱われます（この区分は評価モデル用で、添付文書の承認最大用量とは異なります）",
+      ],
       tags: MPH_TAGS,
       sources: [],
     };
