@@ -8,6 +8,12 @@ export type AlertLevel = "stable" | "caution" | "high" | "critical";
 // とは別軸で、スコア表示の色分け・ラベルに使う。閾値は levelFor に一元化する。
 export type ScoreLevel = "low" | "mid" | "high";
 
+// スコア数値を表示しない（抑制する）理由の構造化コード。
+// UI が生の dose 比較や生文字列に依存せず「なぜ非表示か」を型として扱うための union。
+// 判定の正典はロジック層（calculate-risk.ts の outOfModelRangeReason）に一本化し、
+// UI は再計算しない。将来 reason を追加できるよう union で保持する。
+export type ScoreSuppressionReason = "dose_out_of_model_range";
+
 export type RiskTag =
   | "stimulant"
   | "depressant"

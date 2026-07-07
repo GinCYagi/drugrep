@@ -65,8 +65,15 @@ describe("evaluateRisk 異常系", () => {
     }
   });
 
-  it("dose が上限超 → dose エラー（veryHighMax=120 を導出して検証）", () => {
+  it("承認最大を超える現実的な過量入力は受理する（入力受理とモデル適用範囲を分離）", () => {
+    // 旧仕様は veryHighMax(120) 超で dose エラーだったが、入力ゲートから veryHighMax を外した。
+    // 過量入力（例: 200mg）は受理し、モデル適用範囲外かどうかは表示側で扱う。
     const res = evaluateRisk(input({ dose: 200 }));
+    expect(res.ok).toBe(true);
+  });
+
+  it("極端な機械的異常値のみ dose エラーにする", () => {
+    const res = evaluateRisk(input({ dose: 1e9 }));
     expect(res.ok).toBe(false);
     if (!res.ok) {
       expect(res.errors.some((e) => e.field === "dose" && e.entryKey === "k1")).toBe(true);

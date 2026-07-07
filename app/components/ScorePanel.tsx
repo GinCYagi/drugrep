@@ -5,6 +5,8 @@ import { levelFor } from '@/src/lib/rules/score-level'
 type Props = {
   // 入力が無効なとき（null）はスコアを非表示（グレーアウト）にする。
   finalScore: number | null
+  // モデル適用範囲外のとき true。数値スコアを出さず「適用範囲外」を表示する（判断材料は別枠で継続表示）。
+  outOfRange?: boolean
   tags: RiskTag[]
 }
 
@@ -15,7 +17,7 @@ const LEVEL_STYLES = {
   high: { label: ja.score.high, badge: 'bg-red-100 text-red-800', bar: 'bg-red-500' },
 } as const
 
-export default function ScorePanel({ finalScore, tags }: Props) {
+export default function ScorePanel({ finalScore, outOfRange = false, tags }: Props) {
   const style = finalScore === null ? null : LEVEL_STYLES[levelFor(finalScore)]
   const width = finalScore === null ? 0 : Math.max(0, Math.min(100, finalScore))
   const barColor = style ? style.bar : 'bg-gray-300'
@@ -26,14 +28,20 @@ export default function ScorePanel({ finalScore, tags }: Props) {
         <div>
           <div className="text-xs text-gray-500">{ja.score.label}</div>
           <div className="flex items-baseline gap-1">
-            <span
-              className={`text-[40px] font-bold leading-none ${
-                finalScore === null ? 'text-gray-300' : ''
-              }`}
-            >
-              {finalScore === null ? '—' : finalScore}
-            </span>
-            <span className="text-sm text-gray-500">/100</span>
+            {outOfRange ? (
+              <span className="text-lg font-bold text-gray-600">{ja.score.outOfRange}</span>
+            ) : (
+              <>
+                <span
+                  className={`text-[40px] font-bold leading-none ${
+                    finalScore === null ? 'text-gray-300' : ''
+                  }`}
+                >
+                  {finalScore === null ? '—' : finalScore}
+                </span>
+                <span className="text-sm text-gray-500">/100</span>
+              </>
+            )}
           </div>
         </div>
         {style && (

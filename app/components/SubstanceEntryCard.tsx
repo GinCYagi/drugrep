@@ -88,6 +88,8 @@ export default function SubstanceEntryCard({
           <FieldErrors errors={routeErrors} />
         </label>
       </div>
+
+      <p className="text-[11px] leading-snug text-gray-400">{ja.entry.doseRangeNote}</p>
     </div>
   )
 }

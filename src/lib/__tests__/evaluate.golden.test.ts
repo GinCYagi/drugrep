@@ -122,11 +122,8 @@ describe("evaluateRisk — golden (success)", () => {
       level: "low", // 10 → low（0–33）
       breakdown: { base: 8, routeFactor: 1, doseFactor: 1.3, interactionAdd: 0 },
       firedInteractions: [],
-      // 【Reject 対応で文言更新】「常用域」（臨床用語）→ 内部モデルであることが分かる表現へ。
-      //   doseFactor>1（commonMax 超）で出る警告。数値・doseFactor は不変、文言のみ変更。
-      warnings: [
-        "設定用量は評価モデル上では高用量域として扱われます（この区分は評価モデル用で、添付文書の承認最大用量とは異なります）",
-      ],
+      // 【警告段階化】doseFactor 1.3（commonMax超〜highMax以下）= 段階1。数値は不変、文言のみ段階化。
+      warnings: ["評価モデル上、用量補正が強くなります"],
       tags: MPH_TAGS,
       sources: [],
     };
@@ -159,9 +156,8 @@ describe("evaluateRisk — golden (success)", () => {
       level: "low", // 18 → low（0–33）。単剤の到達上端でも low どまり。
       breakdown: { base: 8, routeFactor: 1.4, doseFactor: 1.6, interactionAdd: 0 },
       firedInteractions: [],
-      warnings: [
-        "設定用量は評価モデル上では高用量域として扱われます（この区分は評価モデル用で、添付文書の承認最大用量とは異なります）",
-      ],
+      // 【警告段階化】doseFactor 1.6（highMax超〜veryHighMax以下）= 段階2。
+      warnings: ["評価モデル上、さらに高い用量域として扱われます"],
       tags: MPH_TAGS,
       sources: [],
     };
@@ -225,6 +221,156 @@ describe("evaluateRisk — golden (success)", () => {
       if (!res.ok) return;
       expect(res.result).toEqual(canonical.result);
     }
+  });
+});
+
+// -----------------------------------------------------------------------------
+// A1: モデル適用範囲外（dose > veryHighMax）のロジック層ゴールデン。
+//
+// 【挙動変更を固定】入力ゲートから veryHighMax を撤去（validation.ts）したため、
+// 以前は validation で棄却されていた dose > veryHighMax が evaluateRisk を通過するように
+// なり、これまで実効デッドコードだった doseFactor 2.0 分岐（calculate-risk.ts）が初めて
+// 到達可能になった。本ブロックはその実測値を固定する。
+//
+// 重要（層の分離）: ロジック層（evaluateRisk / calculateRisk）は範囲外でも数値スコアを
+// 返す。「適用範囲外はスコアを数値表示しない」のは UI 層（page.tsx の outOfModelRange）の
+// 責務であり、本ゴールデンはロジックが返す生の値を固定する。UI 非表示は別レイヤの関心事。
+// -----------------------------------------------------------------------------
+describe("evaluateRisk — golden (out-of-range / dose > veryHighMax)", () => {
+  it("veryHighMax 超の用量は受理され doseFactor 2.0 と段階3警告付きで数値を返す（UI が隠す値）", () => {
+    // methylphenidate / oral / dose=200（veryHighMax=120 超）
+    // doseFactor: 2.0（初めて到達する分岐）。solo = 8 × 1.0 × 2.0 = 16。
+    // stage=3 → 「適用範囲を超えています」警告。ロジックは数値(16)を返す（UI 側で非表示化）。
+    const res = evaluateRisk(input({ dose: 200 }));
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const expected: RiskResult = {
+      finalScore: 16,
+      level: "low", // 16 → low（0–33）。範囲外でもロジック上の数値は low 帯。
+      breakdown: { base: 8, routeFactor: 1, doseFactor: 2, interactionAdd: 0 },
+      firedInteractions: [],
+      // 【警告段階化】stage 3（veryHighMax 超）= モデル適用範囲外の警告。
+      warnings: [
+        "評価モデルの適用範囲を超えています。スコア数値は参考表示せず、既知の注意情報のみ表示します",
+      ],
+      tags: MPH_TAGS,
+      sources: [],
+    };
+    expect(res.result).toEqual(expected);
+
+    // veryHighMax 以下（dose=120, doseFactor 1.6）より doseFactor が上がっていること。
+    const inRange = evaluateRisk(input({ dose: 120, route: "oral" }));
+    expect(inRange.ok).toBe(true);
+    if (!inRange.ok) return;
+    expect(res.result.breakdown.doseFactor).toBeGreaterThan(
+      inRange.result.breakdown.doseFactor
+    );
+  });
+});
+
+// -----------------------------------------------------------------------------
+// 境界値ゴールデン（手書き）: veryHighMax(=120) ちょうど vs +1(=121)。
+// dose <= veryHighMax は範囲内（doseFactor 1.6・数値スコア表示）、
+// dose > veryHighMax で適用範囲外（doseFactor 2.0・段階3警告）へ 1 単位でフリップする。
+// ※ 導出型 golden（G2）は Post-MVP。ここは手書きの境界固定。
+// -----------------------------------------------------------------------------
+describe("evaluateRisk — golden (境界: veryHighMax 前後)", () => {
+  it("veryHighMax ちょうど（120）は範囲内: doseFactor 1.6・段階2警告・数値スコアを返す", () => {
+    const res = evaluateRisk(input({ dose: 120, route: "oral" }));
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const expected: RiskResult = {
+      finalScore: 13, // 8 × 1.0 × 1.6 = 12.8 → 13
+      level: "low",
+      breakdown: { base: 8, routeFactor: 1, doseFactor: 1.6, interactionAdd: 0 },
+      firedInteractions: [],
+      warnings: ["評価モデル上、さらに高い用量域として扱われます"],
+      tags: MPH_TAGS,
+      sources: [],
+    };
+    expect(res.result).toEqual(expected);
+  });
+
+  it("veryHighMax+1（121）は適用範囲外: doseFactor 2.0・段階3警告へ切り替わる", () => {
+    const res = evaluateRisk(input({ dose: 121, route: "oral" }));
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const expected: RiskResult = {
+      finalScore: 16, // 8 × 1.0 × 2.0 = 16
+      level: "low",
+      breakdown: { base: 8, routeFactor: 1, doseFactor: 2, interactionAdd: 0 },
+      firedInteractions: [],
+      warnings: [
+        "評価モデルの適用範囲を超えています。スコア数値は参考表示せず、既知の注意情報のみ表示します",
+      ],
+      tags: MPH_TAGS,
+      sources: [],
+    };
+    expect(res.result).toEqual(expected);
+
+    // 120（1.6）→ 121（2.0）で doseFactor が上がっていること（境界のフリップ）。
+    const inRange = evaluateRisk(input({ dose: 120, route: "oral" }));
+    expect(inRange.ok).toBe(true);
+    if (!inRange.ok) return;
+    expect(res.result.breakdown.doseFactor).toBeGreaterThan(
+      inRange.result.breakdown.doseFactor
+    );
+  });
+});
+
+// -----------------------------------------------------------------------------
+// 単剤カバレッジ・ゴールデン: pregabalin / eszopiclone。
+// C12 Contract Check（全物質が最低1本の golden に登場）を満たすための単剤固定。
+// これらは相互作用ルールを単剤では発火させない（警告なし・低リスク）。
+// -----------------------------------------------------------------------------
+describe("evaluateRisk — golden (単剤カバレッジ: pregabalin / eszopiclone)", () => {
+  it("pregabalin 単剤（範囲内・警告なし）", () => {
+    // pregabalin / oral / 300（commonMax=600 以下 → doseFactor 1.0）
+    // base = depressant(2) + sedative_hypnotic(2) = 4。solo = 4 × 1.0 × 1.0 = 4。
+    const res = evaluateRisk({
+      entries: [
+        { entryKey: "k1", substanceId: "pregabalin", dose: 300, route: "oral" },
+      ],
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const expected: RiskResult = {
+      finalScore: 4,
+      level: "low",
+      breakdown: { base: 4, routeFactor: 1, doseFactor: 1, interactionAdd: 0 },
+      firedInteractions: [],
+      warnings: [],
+      tags: ["depressant", "sedative_hypnotic"],
+      sources: [],
+    };
+    expect(res.result).toEqual(expected);
+  });
+
+  it("eszopiclone 単剤（範囲内・警告なし）", () => {
+    // eszopiclone / oral / 2（commonMax=3 以下 → doseFactor 1.0）
+    // base = depressant(2) + sedative_hypnotic(3) + respiratory_depression(1) = 6。
+    const res = evaluateRisk({
+      entries: [
+        { entryKey: "k1", substanceId: "eszopiclone", dose: 2, route: "oral" },
+      ],
+    });
+    expect(res.ok).toBe(true);
+    if (!res.ok) return;
+
+    const expected: RiskResult = {
+      finalScore: 6,
+      level: "low",
+      breakdown: { base: 6, routeFactor: 1, doseFactor: 1, interactionAdd: 0 },
+      firedInteractions: [],
+      warnings: [],
+      tags: ["depressant", "sedative_hypnotic", "respiratory_depression"],
+      sources: [],
+    };
+    expect(res.result).toEqual(expected);
   });
 });
 
@@ -471,6 +617,37 @@ describe("calculateCombinedRisk — golden (interaction)", () => {
     expect(res.triggered[0]).toMatchObject({
       ruleId: "maoi_plus_serotonergic",
       contribution: res.interactionAdd,
+    });
+  });
+});
+
+// -----------------------------------------------------------------------------
+// A1: calculateCombinedRisk 層でも、範囲外エントリ（doseFactor 2.0）は「抑制されず」
+// soloTotal に合算される。適用範囲外のスコア非表示は UI 層のみの責務であり、ロジックは
+// 数値を返し続けることを固定する（層の分離の裏付け）。
+//
+// 使用ペア: methylphenidate(dose=200, 範囲外) + moclobemide(dose=300, 範囲内)。
+//   相互作用ルールはいずれも非発火（serotonergic は moclobemide の1件のみで minCount 2 未満、
+//   stimulant と seizure_threshold_lowering は同居しない）。→ interactionAdd=0, sources=[]。
+// -----------------------------------------------------------------------------
+describe("calculateCombinedRisk — golden (out-of-range, no suppression)", () => {
+  it("範囲外エントリも合算される（スコア抑制は UI 層の責務でロジックは数値を返す）", () => {
+    const res = calculateCombinedRisk([
+      { drug: "methylphenidate", dose: "200", route: "oral" }, // veryHighMax=120 超 → doseFactor 2.0, solo 16
+      { drug: "moclobemide", dose: "300", route: "oral" }, // commonMax=600 以下 → doseFactor 1.0, solo 2
+    ]);
+
+    // soloTotal = 16 + 2 = 18。相互作用は非発火（interactionAdd 0）。finalScore = round(18) = 18。
+    expect(res).toEqual({
+      finalScore: 18,
+      soloTotal: 18,
+      interactionAdd: 0,
+      perDose: [
+        { drug: "methylphenidate", soloScore: 16 },
+        { drug: "moclobemide", soloScore: 2 },
+      ],
+      triggered: [],
+      sources: [],
     });
   });
 });

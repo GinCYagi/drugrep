@@ -3,8 +3,13 @@ import { findSubstance } from "@/src/lib/find-substance";
 import type { Route } from "@/src/types/domain";
 
 // バリデーションはこの層（と evaluate.ts）で完結させ、src/lib/rules/ には持ち込まない。
-// 検証パラメータ（存在する物質・許可経路・用量上限）はすべて substances データから導出する。
-// validation.ts にマジックナンバーは書かない。
+// 検証パラメータ（存在する物質・許可経路）は substances データから導出する。
+// 用量はモデル適用範囲(veryHighMax)を入力ゲートにしない（入力受理とモデル適用範囲は別責務）。
+// 現実的な過量入力は受理し、範囲外かどうかは表示側で扱う。
+
+// 入力健全性の上限（機械的異常値ガード）。評価モデルの veryHighMax や臨床上限とは無関係で、
+// 桁間違い等の明らかな異常のみを弾く。物質データからは導出しない（意図的な例外）。
+const INPUT_SANITY_MAX = 100000;
 
 export type FieldError = {
   entryKey: string;
@@ -58,24 +63,21 @@ export const RiskInputSchema = z
         });
       }
 
-      // dose が正の有限数か
+      // dose が正の有限数か（入力健全性）。モデル適用範囲(veryHighMax)は入力ゲートに使わない。
+      // 過量入力は受理し、モデル適用範囲外かどうかは表示側（スコア非表示＋「適用範囲外」）で扱う。
       if (!Number.isFinite(entry.dose) || entry.dose <= 0) {
         ctx.addIssue({
           code: "custom",
           path: ["entries", i, "dose"],
           message: "用量は正の有限数を入力してください",
         });
-      } else {
-        // 上限は doseBands.veryHighMax（内部相対スケールの最大バンド）から導出。
-        // 定義が無い物質は導出不能としてスキップする。
-        const ceiling = substance.doseBands?.veryHighMax;
-        if (ceiling !== undefined && entry.dose > ceiling) {
-          ctx.addIssue({
-            code: "custom",
-            path: ["entries", i, "dose"],
-            message: `評価可能な用量の範囲(〜${ceiling}${substance.defaultUnit ?? ""})を超えています。これは評価モデルの適用上限であり、添付文書の承認用量ではありません`,
-          });
-        }
+      } else if (entry.dose > INPUT_SANITY_MAX) {
+        // 極端な機械的異常値（桁間違い等）のみ弾く。モデル/臨床の上限ではない。
+        ctx.addIssue({
+          code: "custom",
+          path: ["entries", i, "dose"],
+          message: "用量の入力値が大きすぎます。値を確認してください",
+        });
       }
     });
   });

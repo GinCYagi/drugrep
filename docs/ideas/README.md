@@ -53,4 +53,4 @@
 |---|---|---|
 | [prescription-import.md](prescription-import.md) | 電子お薬手帳QR（JAHIS）からの処方薬取り込み | 現時点では実装しない（Post-MVP候補） |
 | [debug-report.md](debug-report.md) | Prototype限定のデバッグ報告（非公開report JSON／公開Issue要約の分離、golden昇格） | 現時点では実装しない（Post-MVP候補） |
-| [score-model-calibration.md](score-model-calibration.md) | doseFactor 2.0 到達不能・単剤での mid/high 到達しにくさ・validation 上限との整合 | 現時点では実装しない（Post-MVP候補） |
+| [score-model-calibration.md](score-model-calibration.md) | 過量入力受理・適用範囲外表示は実装済み（2026-07-07）。残: doseFactor 2.0 の再較正/削除・スケール全体方針・数値キャリブレーション(Task5C-2) | 現時点では実装しない（Post-MVP候補） |
