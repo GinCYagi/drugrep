@@ -1,11 +1,11 @@
-# 文書ヘッダ規則仕様書（Document Header Standard）v1.4
+# 文書ヘッダ規則仕様書（Document Header Standard）v1.5
 
 - **位置づけ**: プロジェクト横断共通規則。「判断形式の共通化」に該当し、判断内容（各プロジェクトの思想・用語・成果物）は一切含まない。
 - **適用範囲**: SOS / HNS / drep / BAiOS / Y3D / ProC（全プロジェクト共通）の全伝達文、および今後開始される全プロジェクト。
 - **目的**: (1) 複数プロジェクト並行時の誤配・文脈混入の防止、(2) 半年後に資料として読み返したときの即時可読性、(3) 監査時の機械的抽出可能性。
 - **状態**: **発効**
-- **現在版**: v1.4追補2
-- **発効日**: 2026-07-11
+- **現在版**: v1.5
+- **発効日**: 2026-07-12
 - **配布方法**: 原文（本.md）掲示（Gin裁定）
 
 ---
@@ -156,6 +156,9 @@
 
 - この10種で十分とし、**新規種別の追加はGin裁定事項**とする。
 - 1文書1種別。複数性質を持つ文は主目的で選ぶ（例: 承認+次工程指示 → Approval）。
+- **DecisionおよびApprovalのSenderはOrchestratorに限る。** AIプロセス（Role Registry掲載の全Role ID、Runtimeを問わず）はDecisionおよびApprovalを発行してはならない。裁定・承認を要する事項は、第5章1項に従い「【Gin判断待ち — 隔離】」へ隔離し、Orchestratorの発行を待つ。待つことが常に正しい対応である。
+- **AIプロセスがOrchestrator名義（Sender: Gin）で文書を発行することを禁止する（Orchestrator偽装の禁止）。**
+- 本2規則は運用初期からの原則の再明文化である（明文の脱落を検出したため復活）。
 
 ## 4. 記法例
 
@@ -164,7 +167,7 @@
 ```
 【HNS】Review｜HNS-Crd より HNS-Rev への文（分類軸資産 第2バッチへの回答）
 【SOS】Proposal｜SOS-Rev より Gin への文（推論資産構成案）
-【drep】Approval｜drep-Crd より drep-Rev への文（Task5C実装着手）
+【drep】Approval｜Gin より drep-Crd への文（Task5C実装着手）
 【SOS/HNS】Notice｜HNS-Crd より Gin・SOS-Rev・HNS-Rev への文（並行運用方針共有）
 【ProC】Notice｜Crd より Gin・SOS-Rev・HNS-Rev・drep-Imp への文（ヘッダ規則v1.4配布）
 【Y3D】Decision｜Gin より Y3D-Rev・Y3D-Crd への文（確認事項裁定）
@@ -193,6 +196,8 @@
 【HNS】Review｜HNS-Crd  より HNS-Rev  への文（…）		← 半角スペースが複数
 【drep】Question｜Ginより drep-Crd への文（…）			← Orchestrator直後の半角スペース欠落
 【drep】Report｜drep-Crd より Ginへの文（…）			← Orchestrator直後の半角スペース欠落
+【drep】Approval｜drep-Crd より drep-Rev への文（Task5C実装着手）	← Decision/Approval発行主体違反（Orchestrator限定）
+【SOS】Decision｜Gin より SOS-Rev への文（…）※実際の発行者がAIプロセスの場合	← Orchestrator偽装（名義借用の禁止）
 ```
 
 ## 5. 本文構造規則（ヘッダに付随する共通規則）
@@ -234,6 +239,7 @@
 | v1.4 | 2026-07-11 | Role RegistryのActiveを非排他的状態として明文化。Registry未掲載とRole不存在を分離。正式運用実績がある未掲載Roleを同期漏れ候補として扱う規則を追加。BAiOS・Y3Dの正式識別子およびProject Prefixを追加。複数プロジェクト横断文でも所属Project Prefixを必須化。Project Prefixは原則大文字表記を正規形とし、`drep-`・`BAiOS-`をGin裁定による例外、ProCをPrefixなしとした。Role ID Rev／Crd／Ppl／Impを追記。Claude／Fable／ChappyをFrozenに変更し、後継Role IDをImp／Rev／Crdとして記録 |
 | v1.4追補 | 2026-07-11 | Sender・「より」・Recipient・「への文」の境界に半角スペース1文字を置く正規形へ変更。発効前文書の旧形式は履歴上有効とし、一括修正を不要とする経過措置を追加。 |
 | v1.4追補2 | 2026-07-11 | OrchestratorがSenderまたはRecipientとなる場合にも、固定語「より」「への文」との境界へ半角スペース1文字を配置することを明文化。 |
+| v1.5 | 2026-07-12 | DecisionおよびApprovalのSenderをOrchestratorに限定する規則、およびOrchestrator偽装（AIプロセスによるGin名義発行）の禁止を第3章へ復活明文化。第4章正例のApproval例を発行主体違反として誤例へ移動し、Orchestrator発信の正例へ差し替え。発行主体違反・偽装の違反類型を誤例へ追加 |
 
 - 本仕様書の改訂はGin裁定を必須とする。改訂提案はProposalとして提出する。
 
