@@ -3,7 +3,11 @@
 - **位置づけ**: プロジェクト横断共通規則。「判断形式の共通化」に該当し、判断内容（各プロジェクトの思想・用語・成果物）は一切含まない。
 - **適用範囲**: SOS / HNS / drep / BAiOS / Y3D / ProC（全プロジェクト共通）の全伝達文、および今後開始される全プロジェクト。
 - **目的**: (1) 複数プロジェクト並行時の誤配・文脈混入の防止、(2) 半年後に資料として読み返したときの即時可読性、(3) 監査時の機械的抽出可能性。
-- **状態**: **発効**（v1.0: 2026-07-07 Gin承認 / v1.1: 照合規則追加 / v1.2: ProC確定・本文統合 / v1.3: 2026-07-09 Gin発効裁定 — Role ID・Runtime・Orchestrator・Role Registry新設 / v1.4: 2026-07-11 Gin発効裁定 — Role Registry同期規則・Project Prefix運用・Rev/Crd/Ppl/Imp追加）。配布方法は原文（本.md）掲示とする（Gin裁定）。/ v1.4追補: 2026-07-11 Gin発効裁定 — ヘッダー内半角スペース規則・経過措置追加
+- **状態**: **発効**
+- **現在版**: v1.4追補2
+- **発効日**: 2026-07-11
+- **配布方法**: 原文（本.md）掲示（Gin裁定）
+
 ---
 
 ## 1. 基本形式
@@ -92,6 +96,11 @@
   - × 独立検証ではない：実装 `drep-Imp-web`／検証 `drep-Imp-local`
   - 注記：独立検証性の規範は、各プロジェクトの品質規則に従う。
 - Orchestratorは、プロジェクト横断の統括・裁定主体である。現行運用ではGinが該当する。OrchestratorはRole IDの枠外とする。ヘッダではProject Prefixなしの呼称で表記する。Orchestrator表記には2.6の照合規則を適用する。
+- OrchestratorがSenderまたはRecipientとして記載される場合も、固定語との境界には半角スペース（U+0020）を1文字ずつ配置する。
+  - Senderの場合：`Gin より ProjectPrefix-Recipient への文`
+  - Recipientの場合：`ProjectPrefix-Sender より Gin への文`
+  - 複数Recipientの一部である場合：`ProjectPrefix-Sender より Gin・ProjectPrefix-Recipient への文`
+- Orchestrator表記と全角中黒「・」の間にはスペースを置かない。
 - 受信者が複数の場合は、全角中黒「・」で連結する。例：`Gin・SOS-Rev・SOS-Imp`
 - 受信者が複数の場合の並び順は、作業担当者を先頭とし、共有・待機者を後置することを推奨する（推奨であり、違反判定の対象とはしない）。
 - **Project Prefixは、【ProC】を除くすべてのプロジェクト所属Role IDに必須とする。**
@@ -159,6 +168,9 @@
 【SOS/HNS】Notice｜HNS-Crd より Gin・SOS-Rev・HNS-Rev への文（並行運用方針共有）
 【ProC】Notice｜Crd より Gin・SOS-Rev・HNS-Rev・drep-Imp への文（ヘッダ規則v1.4配布）
 【Y3D】Decision｜Gin より Y3D-Rev・Y3D-Crd への文（確認事項裁定）
+【drep】Question｜Gin より drep-Crd への文（返信テスト）
+【drep】Report｜drep-Crd より Gin への文（返信テストへの応答）
+【ProC】Notice｜Crd より Gin・SOS-Rev・HNS-Rev への文（共通規則配布）
 
 ```
 
@@ -177,12 +189,10 @@
 【drep】Report｜drep-Imp-mobileより Ginへの文（…）		← Runtime語彙外（正規Runtimeは -web / -local の閉集合）
 【drep】Report｜drep-Imp-[ChatGPT]より Ginへの文（…）	← モデル名Runtime（角括弧記法自体も非採用記法）
 【HNS】Review｜HNS-Crdより HNS-Revへの文（…）			← Sender・Recipient境界の半角スペース欠落
-
-【HNS】Review｜HNS-Crd　より HNS-Rev　への文（…）
-← 全角スペース使用
-
-【HNS】Review｜HNS-Crd  より HNS-Rev  への文（…）
-← 半角スペースが複数
+【HNS】Review｜HNS-Crd　より HNS-Rev　への文（…）		← 全角スペース使用
+【HNS】Review｜HNS-Crd  より HNS-Rev  への文（…）		← 半角スペースが複数
+【drep】Question｜Ginより drep-Crd への文（…）			← Orchestrator直後の半角スペース欠落
+【drep】Report｜drep-Crd より Ginへの文（…）			← Orchestrator直後の半角スペース欠落
 ```
 
 ## 5. 本文構造規則（ヘッダに付随する共通規則）
@@ -223,6 +233,7 @@
 | v1.3 | 2026-07-09 | Role ID定義を正式化し、担当モデル変更時もRole IDを継続する原則を明文化。Runtime識別（-web / -local）およびOrchestrator定義を新設。Role Registryを付録Aとして新設。Runtime表記案・Role ID改名案・Gin登録案・Orchestrator登録案の非採用記録を追加。第5章「役割の連続性」を2.4へ統合。Recipient並び順推奨規則を追加 |
 | v1.4 | 2026-07-11 | Role RegistryのActiveを非排他的状態として明文化。Registry未掲載とRole不存在を分離。正式運用実績がある未掲載Roleを同期漏れ候補として扱う規則を追加。BAiOS・Y3Dの正式識別子およびProject Prefixを追加。複数プロジェクト横断文でも所属Project Prefixを必須化。Project Prefixは原則大文字表記を正規形とし、`drep-`・`BAiOS-`をGin裁定による例外、ProCをPrefixなしとした。Role ID Rev／Crd／Ppl／Impを追記。Claude／Fable／ChappyをFrozenに変更し、後継Role IDをImp／Rev／Crdとして記録 |
 | v1.4追補 | 2026-07-11 | Sender・「より」・Recipient・「への文」の境界に半角スペース1文字を置く正規形へ変更。発効前文書の旧形式は履歴上有効とし、一括修正を不要とする経過措置を追加。 |
+| v1.4追補2 | 2026-07-11 | OrchestratorがSenderまたはRecipientとなる場合にも、固定語「より」「への文」との境界へ半角スペース1文字を配置することを明文化。 |
 
 - 本仕様書の改訂はGin裁定を必須とする。改訂提案はProposalとして提出する。
 
